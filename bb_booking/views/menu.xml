@@ -1,0 +1,19 @@
+<odoo>
+
+    <record id="prenotazione_action" model="ir.actions.act_window">
+            <field name="name">Fatturazione BB</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">account.move</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{'bb_booking_view': True}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Nuova record
+                </p>
+            </field>
+    </record>
+
+    <menuitem id="test_model_menu" name="Prenotazione Bed and breakfast" action="prenotazione_action" sequence="1"/>
+    <!-- <menuitem id="menu_roombooking" name="Integrazione Octorate" parent="test_model_menu" action="action_roombooking" sequence="10"/> -->
+
+</odoo>

@@ -1,0 +1,77 @@
+<!-- <?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_roombooking_tree" model="ir.ui.view">
+        <field name="name">roombooking.tree</field>
+        <field name="model">account.move</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <tree string="Integrazione Octorate">
+                <field name="createTime"/>
+                <field name="soggiorno_input"/>
+                <field name="firstName"/>
+                <field name="lastName"/>
+                <field name="refer"/>
+                <field name="totalGuest"/>
+                <field name="display_status"/>
+                <field name="touristTax"/>
+                <field name="totalPaid"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_roombooking_form" model="ir.ui.view">
+        <field name="name">roombooking.form</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <form string="Room Booking">
+                <sheet>
+                    <group>
+                        <field name="refer"/>
+                        <field name="status"/>
+                        <field name="checkin"/>
+                        <field name="checkout"/>
+                        <field name="createTime"/>
+                        <field name="updateTime"/>
+                        <field name="channelNotes"/>
+                        <field name="children"/>
+                        <field name="infants"/>
+                        <field name="phone"/>
+                    </group>
+                    <group>
+                        <field name="roomGross"/>
+                        <field name="totalGross"/>
+                        <field name="totalGuest"/>
+                        <field name="data_ingresso"/>
+                        <field name="data_uscita"/>
+                        <field name="channelName"/>
+                        <field name="currency"/>
+                        <field name="firstName"/>
+                        <field name="guestMailAddress"/>
+                        <field name="booking_id"/>
+                        <field name="lastName"/>
+                    </group>
+                    <group>
+                        <field name="paymentStatus"/>
+                        <field name="paymentType"/>
+                        <field name="product_id"/>
+                        <field name="roomName"/>
+                        <field name="rooms"/>
+                        <field name="totalChildren"/>
+                        <field name="totalInfants"/>
+                        <field name="totalPaid"/>
+                        <field name="touristTax"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_roombooking" model="ir.actions.act_window">
+        <field name="name">Integrazione Octorate</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_roombooking_tree"/>
+    </record>
+
+</odoo> -->
