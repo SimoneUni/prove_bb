@@ -1,80 +1,56 @@
 <odoo>
 
-    <record id="view_account_move_booking_form_inherit" model="ir.ui.view">
-        <field name="name">account.move.booking.form.inherit</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_move_form"/>
-        <field name="arch" type="xml">
-
-<!--
+        <record id="view_account_move_booking_form_inherit" model="ir.ui.view">
+            <field name="name">account.move.booking.form.inherit</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
 
 
-            <field name="createTime" position="after">
-                <field name="updateTime"/>
+                <field name="partner_id" position="after">
+                    <field name="refer" invisible="1"/>
+                </field>
+
+                <field name="refer" position="after">
+                    <field name="checkin" invisible="1"/>
+                </field>
+
+                <field name="checkin" position="after">
+                    <field name="checkout" invisible="1"/>
+                </field>
+
+                 <field name="checkout" position="after">
+                    <field name="totalGuest" invisible="1"/>
+                </field>
+
+                <field name="payment_reference" position="after">
+                    <field name="rooms" invisible="1"/>
+                </field>
+
+                <field name="rooms" position="after">
+                    <field name="roomGross" invisible="1"/>
+                </field>
+                <!--modifica dei campi del model "account.move.line"-->
+                <xpath expr="//page[@name='invoice_tab']" position="attributes">
+                    <attribute name="string">Dettagli prenotazione</attribute>
+                </xpath>
             </field>
+        </record>
 
-             Field ralativo a data check in/out
-             -->
-            <field name="partner_id" position="after">
-                <field name="refer"/>
-            </field>
-
-            <field name="refer" position="after">
-                <field name="checkin"/>
-            </field>
-
-            <field name="checkin" position="after">
-                <field name="checkout"/>
-            </field>
-
-             <field name="checkout" position="after">
-                <field name="totalGuest"/>
-            </field>
-
-            <field name="payment_reference" position="after">
-                <field name="rooms"/>
-            </field>
-
-            <field name="rooms" position="after">
-                <field name="roomGross"/>
-            </field>
+<!--        <record id="view_invoice_tree_extension" model="ir.ui.view">-->
+<!--                <field name="name">view.invoice.tree.extension</field>-->
+<!--                <field name="model">account.move</field>-->
+<!--                <field name="inherit_id" ref="account.view_out_invoice_tree">-->
+<!--                    <field name="arch" type="xml">-->
+<!--                        <xpath expr="//field[@name='amount_untaxed_signed']" position="after">-->
+<!--                            <field name="refer"/>-->
+<!--                        </xpath>-->
+<!--                    </field>-->
+<!--                </field>-->
+<!--        </record>-->
 
 
 
 
-            <!--modifica dei campi del model "account.move.line"-->
-            <xpath expr="//page[@name='invoice_tab']" position="attributes">
-                <attribute name="string">Dettagli prenotazione</attribute>
-            </xpath>
-<!--
-
-            <xpath expr="//page[@name='invoice_tab']/field[@name='invoice_line_ids']/tree/field[@name='name']"
-                   position="replace">
-                <field name="channelNotes"/>
-            </xpath>
-            <xpath expr="//page[@name='invoice_tab']/field[@name='invoice_line_ids']/tree/field[@name='quantity']"
-                   position="replace">
-                <field name="rooms"/>
-            </xpath>
-            <xpath expr="//page[@name='invoice_tab']/field[@name='invoice_line_ids']/tree/field[@name='price_unit']"
-                   position="replace">
-                <field name="roomGross" editable="top"/>
-            </xpath>
-
-            <xpath expr="//page[@name='invoice_tab']/field[@name='invoice_line_ids']/tree/field[@name='price_subtotal']"
-                   position="replace">
-                <field name="totalGross"/>
-            </xpath>
-            -->
-<!--        </field>-->
-<!--    </record>-->
-
-<!--    <record id="FATTURE_SEQUENCE" model="ir.sequence">-->
-<!--        <field name="name">Sequenza</field>-->
-<!--        <field name="code">account.move</field>-->
-<!--        <field name="prefix">ACCR/%(year)s/</field>-->
-<!--        <field name="number_increment" eval="1"/>-->
-<!--    </record>-->
-
-<!--</odoo>-->
+</odoo>
 

@@ -1,5 +1,24 @@
 import requests
 import json
+import os
+
+import jwt
+from datetime import datetime, timedelta
+
+# Chiave segreta (ideale in una variabile d'ambiente)
+secret_key = 'ff383914fe26d613ace3f52e7da13a670ee69a84'
+
+# Payload con scadenza
+payload = {
+    'user_id': 3,
+    'username': 'admin@admin.it',
+    'ruolo': 'amministratore',
+    'exp': datetime.utcnow() + timedelta(days=1)  # Token scade dopo 1 giorno
+}
+
+# Genera il token JWT
+token = jwt.encode(payload, secret_key, algorithm='HS256')
+print(token)
 
 
 # Dati del client per ottenere il token

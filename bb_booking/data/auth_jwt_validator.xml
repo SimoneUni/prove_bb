@@ -1,0 +1,23 @@
+
+<odoo>
+
+
+    <record id="group_user" model="res.groups">
+        <field name="name">User</field>
+    </record>
+
+    <record id="group_room_booking_manager" model="res.groups">
+        <field name="name">Room Booking Manager</field>
+    </record>
+
+    <record id="access_room_booking_manager" model="ir.model.access">
+        <field name="name">Access Room Booking Manager</field>
+        <field name="model_id" ref="model_account_move"/>
+        <field name="group_id" ref="bb_booking.group_room_booking_manager"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

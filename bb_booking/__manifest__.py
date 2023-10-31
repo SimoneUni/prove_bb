@@ -3,16 +3,15 @@
     'version': '1.0',
     'author': 'Simone',
     'description': 'Prenotazione stanze: integrazione con Octorate',
-    'depends': ['base', 'account', 'web'],
+    'depends': ['base', 'account', 'web','auth_jwt'],
     'data': [
         'security/ir.model.access.csv',
+        'data/auth_jwt_validator.xml',
         'views/booking_info.xml',
-        'views/menu.xml',
+
+
+
     ],
-    'application': True,
+    'application': False,
     'installable': True,
-    'auto_install': False,
-    'controllers': [
-        'bb_booking.controllers.external_api.RoomBookingController',
-    ],
 }

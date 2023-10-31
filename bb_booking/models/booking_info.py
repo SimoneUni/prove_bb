@@ -37,41 +37,43 @@ class roombooking(models.Model):
                 num_ospiti = record.totalGuest
                 record.soggiorno_input = 2 * num_notti * num_ospiti
 
-class prenotadettagli(models.Model):
-    _inherit = "account.move.line"
 
-    #product_id = fields.Many2one('product.product', string="Nome stanza")
-    #quantity = fields.Float(string="Numero notti")
-    move_id = fields.Many2one('account.move', string='Fattura')
-
-
-    name = fields.Char(string="Descrizione")
-    #price_unit = fields.Float(string="Prezzo unitario")
-
-
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        for record in self:
-            if record.product_id:
-                if record.product_id.name == "Tassa soggiorno":
-                    invoice = record.move_id
-                    if invoice:
-                        # Ora puoi accedere agli attributi come 'checkin' e 'checkout' dalla fattura
-                        # Imposta l'orario di check-in e check-out a mezzanotte
-                        checkin_date = fields.Date.from_string(invoice.checkin)
-                        checkout_date = fields.Date.from_string(invoice.checkout)
-                        delta = checkout_date - checkin_date
-                        num_notti = delta.days
-                        num_ospiti = invoice.totalGuest
-                        record.quantity = num_notti * num_ospiti
-                elif record.product_id.name == "PERNOTTO":
-                    invoice = record.move_id
-                    if invoice:
-                        # Calcola i valori dei campi name, quantity e price_unit
-                        name = f"Prenotazione {invoice.refer} dal {invoice.checkin} al {invoice.checkout}"
-                        quantity = invoice.rooms  # Assumi che rooms sia il numero di stanze
-                        price_unit = invoice.roomGross  # Assumi che roomGross sia il costo della stanza
-                        # Imposta i valori nei campi corrispondenti
-                        record.name = name
-                        record.quantity = quantity
-                        record.price_unit = price_unit
+#
+# class prenotadettagli(models.Model):
+#     _inherit = "account.move.line"
+#
+#     #product_id = fields.Many2one('product.product', string="Nome stanza")
+#     #quantity = fields.Float(string="Numero notti")
+#     move_id = fields.Many2one('account.move', string='Fattura')
+#
+#
+#     name = fields.Char(string="Descrizione")
+#     #price_unit = fields.Float(string="Prezzo unitario")
+#
+#
+#     @api.onchange('product_id')
+#     def _onchange_product_id(self):
+#         for record in self:
+#             if record.product_id:
+#                 if record.product_id.name == "Tassa soggiorno":
+#                     invoice = record.move_id
+#                     if invoice:
+#                         # Ora puoi accedere agli attributi come 'checkin' e 'checkout' dalla fattura
+#                         # Imposta l'orario di check-in e check-out a mezzanotte
+#                         checkin_date = fields.Date.from_string(invoice.checkin)
+#                         checkout_date = fields.Date.from_string(invoice.checkout)
+#                         delta = checkout_date - checkin_date
+#                         num_notti = delta.days
+#                         num_ospiti = invoice.totalGuest
+#                         record.quantity = num_notti * num_ospiti
+#                 elif record.product_id.name == "PERNOTTO":
+#                     invoice = record.move_id
+#                     if invoice:
+#                         # Calcola i valori dei campi name, quantity e price_unit
+#                         name = f"Prenotazione {invoice.refer} dal {invoice.checkin} al {invoice.checkout}"
+#                         quantity = invoice.rooms  # Assumi che rooms sia il numero di stanze
+#                         price_unit = invoice.roomGross  # Assumi che roomGross sia il costo della stanza
+#                         # Imposta i valori nei campi corrispondenti
+#                         record.name = name
+#                         record.quantity = quantity
+#                         record.price_unit = price_unit
