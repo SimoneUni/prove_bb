@@ -2,7 +2,7 @@ import requests
 import json
 import os
 
-import jwt
+
 from datetime import datetime, timedelta
 
 # Chiave segreta (ideale in una variabile d'ambiente)
@@ -16,9 +16,9 @@ payload = {
     'exp': datetime.utcnow() + timedelta(days=1)  # Token scade dopo 1 giorno
 }
 
-# Genera il token JWT
-token = jwt.encode(payload, secret_key, algorithm='HS256')
-print(token)
+# # Genera il token JWT
+# token = jwt.encode(payload, secret_key, algorithm='HS256')
+# print(token)
 
 
 # Dati del client per ottenere il token

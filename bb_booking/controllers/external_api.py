@@ -23,33 +23,36 @@ from odoo.tools.safe_eval import json
 #             account_list.append(account_info)
 #
 #         return account_list
-class MyController(http.Controller):
-
-    @http.route('/print_invoices', type='http', auth='public', csrf=False)
-    def print_invoices(self):
-        invoice_records = request.env['account.move'].sudo().search([])
-        for invoice in invoice_records:
-            print("ID FATTURA : ", invoice.id)
-            print("Referenza:", invoice.refer)
-            print("Stato:", invoice.state)
-        return "postate"
-class Fatture(http.Controller):
-    @http.route('/api/getfatture' , auth='public', csrf="*")
-    def get_fatture(self):
-        tutte_lefatture = http.request.env['accoun.move']
-        fatture = tutte_lefatture.sudo().search([])
+# class MyController(http.Controller):
+#
+#     @http.route('/print_invoices', type='http', auth='public', csrf=False)
+#     def print_invoices(self):
+#         invoice_records = request.env['account.move'].sudo().search([])
+#         for invoice in invoice_records:
+#             print("ID FATTURA : ", invoice.id)
+#             print("Referenza:", invoice.refer)
+#             print("Stato:", invoice.state)
+#         return "postate"
+# class Fatture(http.Controller):
+#     @http.route('/api/getfatture' , auth='public', csrf="*")
+#     def get_fatture(self):
+#         tutte_lefatture = http.request.env['accoun.move']
+#         fatture = tutte_lefatture.sudo().search([])
 
 #https://odoo16-prenotazione-bb.unitivastaging.it/api/prova
 class RoomBookingController(http.Controller):
-    @http.route('/api/prova', cors='*', auth='none', methods=['POST'], type="json",  csrf=False, website=False)
+    @http.route('/api/prova', cors='*', auth='public', methods=['POST'], csrf=False, website=False)
     def handle_custom_endpoint(self, **post):
         json_data = request.httprequest.data
+
         try:
             data_dict = json.loads(json_data)
             content = json.loads(data_dict.get("content"))
 
+
         except ValueError:
             return "Errore nella formattazione dei dati JSON"
+
 
             # Estrai il valore del campo 'checkin' dal dizionario dei dati
         refer_ = content.get("refer")
@@ -97,8 +100,15 @@ class RoomBookingController(http.Controller):
 
 
 
-        # ********CONTROLLO/CREAZIONE DEL CONTATTO******
-        contact_bb = request.env['res.partner'].sudo().create({
+
+
+
+        # Creazione della fattura
+        room_booking_obj = []  # Inizializza la variabile come False
+
+        if tipo == 'RESERVATION_CREATED':
+            # ********CONTROLLO/CREAZIONE DEL CONTATTO******
+            contact_bb = request.env['res.partner'].sudo().create({
                 'company_type': 'person',
                 'name': guestsList_,
                 'street': address_,
@@ -107,16 +117,11 @@ class RoomBookingController(http.Controller):
                 'phone': phone_
             })
 
-        # stampa l'ID del contatto appena creato
-        contact_id = contact_bb.id
-        intero_contact = int(contact_id)
-        print("ID CONTATTO CREATO : ", intero_contact)
+            # stampa l'ID del contatto appena creato
+            contact_id = contact_bb.id
+            intero_contact = int(contact_id)
+            print("ID CONTATTO CREATO : ", intero_contact)
 
-
-        # Creazione della fattura
-        room_booking_obj = []  # Inizializza la variabile come False
-
-        if tipo == 'RESERVATION_CREATED':
             room_booking_obj = request.env['account.move'].sudo().create({
                 'state': 'draft',
                 'journal_id': 1,
@@ -179,7 +184,7 @@ class RoomBookingController(http.Controller):
                     'checkout': checkout_,
                     'totalGuest': totalGuest_,
                     'roomGross': roomGross_,
-                    'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
+                    #'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
                 })
 
                 existing_invoice_line_ids = existing_invoice.invoice_line_ids
