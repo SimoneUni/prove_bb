@@ -1,5 +1,5 @@
 from odoo import http, fields
-from odoo.http import request, Response
+from odoo.http import request, Response, _logger
 from odoo.tools.safe_eval import json
 #*****************************************prova*****************
 
@@ -42,212 +42,252 @@ from odoo.tools.safe_eval import json
 #https://odoo16-prenotazione-bb.unitivastaging.it/api/prova
 class RoomBookingController(http.Controller):
     @http.route('/api/prova', cors='*', auth='public', methods=['POST'], csrf=False, website=False)
-    def handle_custom_endpoint(self, **post):
-        json_data = request.httprequest.data
 
+   #gestione degli id dinamici
+    def funzioni_dinamiche (self):
+
+        # ****GESTIONE DEI PRODOTTI ****
+        # ****pernotto***
+
+        prodotto_pernotto = "PERNOTTO"
+
+        pernotto = self.env['product.product'].search([
+            ('name', '=', prodotto_pernotto)
+        ])
+        pernotto_id = pernotto.id
+        # ****Tassa di soggiorno***
+        prodotto_tassa = "Tassa soggiorno"
+
+        soggiorno = self.env['product.product'].search([
+            ('name', '=', prodotto_tassa)
+        ])
+        soggiorno_id = soggiorno.id
+
+        # GESTIONE DEL JOURNAL_ID
+
+        registro_inv = "Customer Invoices"
+
+        inv = self.env['account.journal'].search([
+            ('name', '=', registro_inv)
+        ])
+        inv_id = inv.id
+
+        # gestione account_id
+
+        account_din = "Rimborsi spese di vendita"
+
+        din = self.env['account.account'].search([
+            ('name', '=', account_din)
+        ])
+        din_id = din.id
+
+        return(pernotto_id, soggiorno_id, inv_id, din_id)
+    #MAIN
+    def handle_custom_endpoint(self, **post):
         try:
+            json_data = request.httprequest.data
             data_dict = json.loads(json_data)
+            _logger.info(f"Received data: {data_dict}")
+
+            if 'ping' in data_dict:
+                _logger.info("Ping received")
+                return Response("Pong", content_type='text/plain', status=200)
+
             content = json.loads(data_dict.get("content"))
 
-
-        except ValueError:
-            return "Errore nella formattazione dei dati JSON"
-
-
             # Estrai il valore del campo 'checkin' dal dizionario dei dati
-        refer_ = content.get("refer")
-        guestsList_ = content.get("guestsList")
-        roomGross_ = content.get("roomGross")
-        totalGuest_ = content.get("totalGuest")
-        numero_stanza_ = content.get("rooms")
-        priceBreakdown = content.get("priceBreakdown")
-        prezzo_unitario_ = priceBreakdown[0].get("price")
-        # **info cliente**
-        guests = content.get("guests")
-        checkin_ = guests[0].get("checkin")
-        checkout_ = guests[0].get("checkout")
-        city_ = guests[0].get("city")
-        email_ = guests[0].get("email")
-        phone_ = guests[0].get("phone")
-        address_ = guests[0].get("address")
+            refer_ = content.get("refer")
+            guestsList_ = content.get("guestsList")
+            roomGross_ = content.get("roomGross")
+            totalGuest_ = content.get("totalGuest")
+            numero_stanza_ = content.get("rooms")
+            priceBreakdown = content.get("priceBreakdown")
+            prezzo_unitario_ = priceBreakdown[0].get("price")
+            # **info cliente**
+            guests = content.get("guests")
+            checkin_ = guests[0].get("checkin")
+            checkout_ = guests[0].get("checkout")
+            city_ = guests[0].get("city")
+            email_ = guests[0].get("email")
+            phone_ = guests[0].get("phone")
+            address_ = guests[0].get("address")
 
-        tipo = data_dict.get('type')
+            tipo = data_dict.get('type')
 
-        checkin_date = fields.Date.from_string(checkin_)
-        checkout_date = fields.Date.from_string(checkout_)
-        delta = checkout_date - checkin_date
-        n_notti = delta.days
-        quantity_soggiorno = totalGuest_ * n_notti
+            checkin_date = fields.Date.from_string(checkin_)
+            checkout_date = fields.Date.from_string(checkout_)
+            delta = checkout_date - checkin_date
+            n_notti = delta.days
+            quantity_soggiorno = totalGuest_ * n_notti
 
-
-        response_data = {
-            "refer": refer_,
-            "prezzo totale": roomGross_,
-            "ospiti": totalGuest_,
-            "checkin": checkin_,
-            "checkout": checkout_,
-            "numero stanza": numero_stanza_,
-            "numero notti": n_notti,
-            "quantity_soggiorno": quantity_soggiorno,
-            "prezzo unitario": prezzo_unitario_,
-            "city_utente": city_,
-            "email": email_,
-            "guestsList": guestsList_,
-            "telefono": phone_,
-            "indirizzo": address_,
-            "tipo": tipo
-        }
-
-
-
-
-
-
-        # Creazione della fattura
-        room_booking_obj = []  # Inizializza la variabile come False
-
-        if tipo == 'RESERVATION_CREATED':
-            # ********CONTROLLO/CREAZIONE DEL CONTATTO******
-            contact_bb = request.env['res.partner'].sudo().create({
-                'company_type': 'person',
-                'name': guestsList_,
-                'street': address_,
-                'city': city_,
-                'email': email_,
-                'phone': phone_
-            })
-
-            # stampa l'ID del contatto appena creato
-            contact_id = contact_bb.id
-            intero_contact = int(contact_id)
-            print("ID CONTATTO CREATO : ", intero_contact)
-
-            room_booking_obj = request.env['account.move'].sudo().create({
-                'state': 'draft',
-                'journal_id': 1,
-                'refer': refer_,
-                'move_type': 'out_invoice',
-                'checkin': checkin_,
-                'checkout': checkout_,
-                'totalGuest': totalGuest_,
-                'rooms': n_notti,
-                'roomGross': roomGross_,
-                'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
-            })
-
-            # Creazione delle linee della fattura
-            linee_fattura = []
-
-            # Linea per il prodotto 1 (Pernotto)
-            linea_fattura_pernotto = {
-                'move_id': room_booking_obj.id,
-                'product_id': 1,  # ID del prodotto 'Pernotto' nel portale amministrazione
-                'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
-                'quantity': n_notti,
-                'price_unit': prezzo_unitario_,
-                'account_id': 107
+            response_data = {
+                "refer": refer_,
+                "prezzo totale": roomGross_,
+                "ospiti": totalGuest_,
+                "checkin": checkin_,
+                "checkout": checkout_,
+                "numero stanza": numero_stanza_,
+                "numero notti": n_notti,
+                "quantity_soggiorno": quantity_soggiorno,
+                "prezzo unitario": prezzo_unitario_,
+                "city_utente": city_,
+                "email": email_,
+                "guestsList": guestsList_,
+                "telefono": phone_,
+                "indirizzo": address_,
+                "tipo": tipo
             }
-            linee_fattura.append(linea_fattura_pernotto)
 
-            # Linea per il prodotto 2 (Tassa di Soggiorno)
-            linea_fattura_tassasoggiorno = {
-                'move_id': room_booking_obj.id,
-                'product_id': 2,  # ID del prodotto 'Tassa di Soggiorno' nel portale amministrazione
-                'name': "Tassa di soggiorno",
-                'quantity': quantity_soggiorno,
-                'account_id': 107
-            }
-            linee_fattura.append(linea_fattura_tassasoggiorno)
-            for line in linee_fattura:
-                request.env['account.move.line'].sudo().create(line)
+            # Creazione della fattura
+            room_booking_obj = []  # Inizializza la variabile come False
 
-            room_booking_obj.with_context(default_type='out_invoice').write({'state': 'draft'})
+            if tipo == 'RESERVATION_CREATED':
+                # ********CONTROLLO/CREAZIONE DEL CONTATTO******
+                contact_bb = request.env['res.partner'].sudo().create({
+                    'company_type': 'person',
+                    'name': guestsList_,
+                    'street': address_,
+                    'city': city_,
+                    'email': email_,
+                    'phone': phone_
+                })
 
-    #*************************************************************************************
-        elif tipo == 'RESERVATION_CHANGE':
+                # stampa l'ID del contatto appena creato
+                contact_id = contact_bb.id
+                intero_contact = int(contact_id)
+                print("ID CONTATTO CREATO : ", intero_contact)
 
-            existing_invoice = request.env['account.move'].sudo().search([
+                pernotto_id, soggiorno_id, inv_id, din_id = self.funzioni_dinamiche()
 
-                ('refer', '=', refer_),
-
-                ('move_type', '=', 'out_invoice')
-
-            ], limit=1)
-
-            if existing_invoice:
-                existing_invoice.write({
+                room_booking_obj = request.env['account.move'].sudo().create({
                     'state': 'draft',
-                    'journal_id': 1,
+                    'journal_id': inv_id,
                     'refer': refer_,
                     'move_type': 'out_invoice',
                     'checkin': checkin_,
                     'checkout': checkout_,
                     'totalGuest': totalGuest_,
+                    'rooms': n_notti,
                     'roomGross': roomGross_,
-                    #'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
+                    'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
                 })
 
-                existing_invoice_line_ids = existing_invoice.invoice_line_ids
+                # Creazione delle linee della fattura
+                linee_fattura = []
 
-                # Modifica le linee di fattura esistenti
-                for line in existing_invoice_line_ids:
-                    if line.product_id.id == 1:  # ID del prodotto 'Pernotto'
-                        # Aggiorna le informazioni relative al prodotto 'Pernotto'
-                        line.write({
-                            'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
-                            'quantity': n_notti,
-                            'price_unit': prezzo_unitario_
-                            # Aggiungi altri campi da aggiornare
-                        })
-                    elif line.product_id.id == 2:  # ID del prodotto 'Tassa di Soggiorno'
-                        # Aggiorna le informazioni relative al prodotto 'Tassa di Soggiorno'
-                        line.write({
-                            'name': "Tassa di soggiorno",
-                            'quantity': quantity_soggiorno
-                            # Aggiungi altri campi da aggiornare
-                        })
+                # Linea per il prodotto 1 (Pernotto)
+                linea_fattura_pernotto = {
+                    'move_id': room_booking_obj.id,
+                    'product_id': pernotto_id,  # ID del prodotto 'Pernotto' nel portale amministrazione
+                    'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
+                    'quantity': n_notti,
+                    'price_unit': prezzo_unitario_,
+                    'account_id': din_id
+                }
+                linee_fattura.append(linea_fattura_pernotto)
 
+                # Linea per il prodotto 2 (Tassa di Soggiorno)
+                linea_fattura_tassasoggiorno = {
+                    'move_id': room_booking_obj.id,
+                    'product_id': soggiorno_id,  # ID del prodotto 'Tassa di Soggiorno' nel portale amministrazione
+                    'name': "Tassa di soggiorno",
+                    'quantity': quantity_soggiorno,
+                    'account_id': din_id
+                }
+                linee_fattura.append(linea_fattura_tassasoggiorno)
+                for line in linee_fattura:
+                    request.env['account.move.line'].sudo().create(line)
 
-            room_booking_obj = existing_invoice
+                room_booking_obj.with_context(default_type='out_invoice').write({'state': 'draft'})
 
-            #************************************************************************
+            # *************************************************************************************
+            elif tipo == 'RESERVATION_CHANGE':
 
+                existing_invoice = request.env['account.move'].sudo().search([
 
-        elif tipo == 'RESERVATION_CANCELLED':
+                    ('refer', '=', refer_),
 
-            # Cerca la fattura esistente basata su 'refer' e 'move_type'
+                    ('move_type', '=', 'out_invoice')
 
-            existing_invoice = request.env['account.move'].sudo().search([
+                ], limit=1)
 
-                ('refer', '=', refer_),
+                pernotto_id, soggiorno_id, inv_id, din_id = self.funzioni_dinamiche()
 
-                ('move_type', '=', 'out_invoice')
+                if existing_invoice:
+                    existing_invoice.write({
+                        'state': 'draft',
+                        'journal_id': inv_id,
+                        'refer': refer_,
+                        'move_type': 'out_invoice',
+                        'checkin': checkin_,
+                        'checkout': checkout_,
+                        'totalGuest': totalGuest_,
+                        'roomGross': roomGross_,
+                        # 'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
+                    })
 
-            ], limit=1)
+                    existing_invoice_line_ids = existing_invoice.invoice_line_ids
 
-            if existing_invoice:
-                # Imposta lo stato della fattura esistente a 'cancel'
-
-                existing_invoice.write({
-
-                    'state': 'cancel'
-
-                })
-
-                # Assegna la fattura esistente all'oggetto room_booking_obj
+                    # Modifica le linee di fattura esistenti
+                    for line in existing_invoice_line_ids:
+                        if line.product_id.id == pernotto_id:  # ID del prodotto 'Pernotto'
+                            # Aggiorna le informazioni relative al prodotto 'Pernotto'
+                            line.write({
+                                'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
+                                'quantity': n_notti,
+                                'price_unit': prezzo_unitario_
+                                # Aggiungi altri campi da aggiornare
+                            })
+                        elif line.product_id.id == soggiorno_id:  # ID del prodotto 'Tassa di Soggiorno'
+                            # Aggiorna le informazioni relative al prodotto 'Tassa di Soggiorno'
+                            line.write({
+                                'name': "Tassa di soggiorno",
+                                'quantity': quantity_soggiorno
+                                # Aggiungi altri campi da aggiornare
+                            })
 
                 room_booking_obj = existing_invoice
 
+                # ************************************************************************
 
 
-        print("La fattura ha il seguyente id ---------->", room_booking_obj.id)
+            elif tipo == 'RESERVATION_CANCELLED':
 
+                # Cerca la fattura esistente basata su 'refer' e 'move_type'
 
+                existing_invoice = request.env['account.move'].sudo().search([
 
+                    ('refer', '=', refer_),
 
-        #room_booking_obj.action_post()
-        print("postata")
-        return Response(json.dumps(response_data), content_type='application/json')
+                    ('move_type', '=', 'out_invoice')
+
+                ], limit=1)
+
+                if existing_invoice:
+                    # Imposta lo stato della fattura esistente a 'cancel'
+
+                    existing_invoice.write({
+
+                        'state': 'cancel'
+
+                    })
+
+                    # Assegna la fattura esistente all'oggetto room_booking_obj
+
+                    room_booking_obj = existing_invoice
+
+            print("La fattura ha il seguyente id ---------->", room_booking_obj.id)
+
+            # room_booking_obj.action_post()
+            print("postata")
+            return Response(json.dumps(response_data), content_type='application/json')
+        except json.JSONDecodeError as e:
+            _logger.error(f"JSON Decode Error: {e}")
+            return Response("Invalid JSON format", content_type='text/plain', status=400)
+        except Exception as e:
+            _logger.exception("An unexpected error occurred")
+            return Response("Internal Server Error", content_type='text/plain', status=500)
+
 
 
 
