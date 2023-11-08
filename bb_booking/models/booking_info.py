@@ -1,3 +1,4 @@
+#copyright © Simone Tullino 08/11
 from odoo import models, fields, api
 
 class roombooking(models.Model):

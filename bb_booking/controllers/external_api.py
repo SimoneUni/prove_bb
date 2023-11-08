@@ -1,3 +1,4 @@
+#copyright © Simone Tullino 08/11
 from odoo import http, fields
 from odoo.http import request, Response, _logger
 from odoo.tools.safe_eval import json
@@ -44,44 +45,7 @@ class RoomBookingController(http.Controller):
     @http.route('/api/prova', cors='*', auth='public', methods=['POST'], csrf=False, website=False)
 
    #gestione degli id dinamici
-    def funzioni_dinamiche (self):
 
-        # ****GESTIONE DEI PRODOTTI ****
-        # ****pernotto***
-
-        prodotto_pernotto = "PERNOTTO"
-
-        pernotto = self.env['product.product'].search([
-            ('name', '=', prodotto_pernotto)
-        ])
-        pernotto_id = pernotto.id
-        # ****Tassa di soggiorno***
-        prodotto_tassa = "Tassa soggiorno"
-
-        soggiorno = self.env['product.product'].search([
-            ('name', '=', prodotto_tassa)
-        ])
-        soggiorno_id = soggiorno.id
-
-        # GESTIONE DEL JOURNAL_ID
-
-        registro_inv = "Customer Invoices"
-
-        inv = self.env['account.journal'].search([
-            ('name', '=', registro_inv)
-        ])
-        inv_id = inv.id
-
-        # gestione account_id
-
-        account_din = "Rimborsi spese di vendita"
-
-        din = self.env['account.account'].search([
-            ('name', '=', account_din)
-        ])
-        din_id = din.id
-
-        return(pernotto_id, soggiorno_id, inv_id, din_id)
     #MAIN
     def handle_custom_endpoint(self, **post):
         try:
@@ -119,6 +83,7 @@ class RoomBookingController(http.Controller):
             delta = checkout_date - checkin_date
             n_notti = delta.days
             quantity_soggiorno = totalGuest_ * n_notti
+            nome_stanza = content.get("roomNameGuest")
 
             response_data = {
                 "refer": refer_,
@@ -135,11 +100,19 @@ class RoomBookingController(http.Controller):
                 "guestsList": guestsList_,
                 "telefono": phone_,
                 "indirizzo": address_,
-                "tipo": tipo
+                "tipo": tipo,
+                "nome stanza" : nome_stanza
+
             }
 
             # Creazione della fattura
             room_booking_obj = []  # Inizializza la variabile come False
+            customer_invoice_journal = request.env['account.journal'].sudo().search([('type', '=', 'sale')], limit=1)
+            customer_account = request.env['account.account'].sudo().search([('name', '=', 'Merci c/vendite')], limit=1)
+            room_product = request.env['product.product'].sudo().search([('name', '=', nome_stanza)], limit=1)
+            if not room_product:
+                room_product = request.env['product.product'].sudo().create({'name': nome_stanza})
+            tassa_soggiorno = request.env['product.product'].sudo().search([('name', '=', "Tassa soggiorno")], limit=1)
 
             if tipo == 'RESERVATION_CREATED':
                 # ********CONTROLLO/CREAZIONE DEL CONTATTO******
@@ -157,11 +130,11 @@ class RoomBookingController(http.Controller):
                 intero_contact = int(contact_id)
                 print("ID CONTATTO CREATO : ", intero_contact)
 
-                pernotto_id, soggiorno_id, inv_id, din_id = self.funzioni_dinamiche()
+
 
                 room_booking_obj = request.env['account.move'].sudo().create({
                     'state': 'draft',
-                    'journal_id': inv_id,
+                    'journal_id': customer_invoice_journal.id,
                     'refer': refer_,
                     'move_type': 'out_invoice',
                     'checkin': checkin_,
@@ -178,27 +151,47 @@ class RoomBookingController(http.Controller):
                 # Linea per il prodotto 1 (Pernotto)
                 linea_fattura_pernotto = {
                     'move_id': room_booking_obj.id,
-                    'product_id': pernotto_id,  # ID del prodotto 'Pernotto' nel portale amministrazione
+                    'product_id': room_product.id,  # ID del prodotto 'Pernotto' nel portale amministrazione
                     'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
                     'quantity': n_notti,
                     'price_unit': prezzo_unitario_,
-                    'account_id': din_id
+                    'account_id': customer_account.id
                 }
                 linee_fattura.append(linea_fattura_pernotto)
 
                 # Linea per il prodotto 2 (Tassa di Soggiorno)
                 linea_fattura_tassasoggiorno = {
                     'move_id': room_booking_obj.id,
-                    'product_id': soggiorno_id,  # ID del prodotto 'Tassa di Soggiorno' nel portale amministrazione
+                    'product_id': tassa_soggiorno.id,  # ID del prodotto 'Tassa di Soggiorno' nel portale amministrazione
                     'name': "Tassa di soggiorno",
                     'quantity': quantity_soggiorno,
-                    'account_id': din_id
+                    'account_id': customer_account.id
                 }
                 linee_fattura.append(linea_fattura_tassasoggiorno)
                 for line in linee_fattura:
                     request.env['account.move.line'].sudo().create(line)
 
                 room_booking_obj.with_context(default_type='out_invoice').write({'state': 'draft'})
+                room_booking_obj.message_post(
+                    body=f"<p><b><font size='4' face='Arial'>Riepilogo dei dati:</font></b><br>"
+                         f"Refer: {refer_}<br>"
+                         f"Prezzo totale: {roomGross_}<br>"
+                         f"Ospiti: {totalGuest_}<br>"
+                         f"Checkin: {checkin_}<br>"
+                         f"Checkout: {checkout_}<br>"
+                         f"Numero stanza: {numero_stanza_}<br>"
+                         f"Numero notti: {n_notti}<br>"
+                         f"Quantity soggiorno: {quantity_soggiorno}<br>"
+                         f"Prezzo unitario: {prezzo_unitario_}<br>"
+                         f"City utente: {city_}<br>"
+                         f"Email: {email_}<br>"
+                         f"Guests List: {guestsList_}<br>"
+                         f"Telefono: {phone_}<br>"
+                         f"Indirizzo: {address_}<br>"
+                         f"Nome stanza: {nome_stanza}<br></p>",
+                    message_type='comment'
+                )
+
 
             # *************************************************************************************
             elif tipo == 'RESERVATION_CHANGE':
@@ -211,12 +204,12 @@ class RoomBookingController(http.Controller):
 
                 ], limit=1)
 
-                pernotto_id, soggiorno_id, inv_id, din_id = self.funzioni_dinamiche()
+
 
                 if existing_invoice:
                     existing_invoice.write({
                         'state': 'draft',
-                        'journal_id': inv_id,
+                        'journal_id': customer_invoice_journal.id,
                         'refer': refer_,
                         'move_type': 'out_invoice',
                         'checkin': checkin_,
@@ -230,7 +223,7 @@ class RoomBookingController(http.Controller):
 
                     # Modifica le linee di fattura esistenti
                     for line in existing_invoice_line_ids:
-                        if line.product_id.id == pernotto_id:  # ID del prodotto 'Pernotto'
+                        if line.product_id.id == room_product.id:  # ID del prodotto 'Pernotto'
                             # Aggiorna le informazioni relative al prodotto 'Pernotto'
                             line.write({
                                 'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
@@ -238,7 +231,7 @@ class RoomBookingController(http.Controller):
                                 'price_unit': prezzo_unitario_
                                 # Aggiungi altri campi da aggiornare
                             })
-                        elif line.product_id.id == soggiorno_id:  # ID del prodotto 'Tassa di Soggiorno'
+                        elif line.product_id.id == tassa_soggiorno.id:  # ID del prodotto 'Tassa di Soggiorno'
                             # Aggiorna le informazioni relative al prodotto 'Tassa di Soggiorno'
                             line.write({
                                 'name': "Tassa di soggiorno",
@@ -247,6 +240,25 @@ class RoomBookingController(http.Controller):
                             })
 
                 room_booking_obj = existing_invoice
+                room_booking_obj.message_post(
+                    body=f"<p><b><font size='4' face='Arial'>Dati aggiornati:</font></b><br>"
+                         f"Refer: {refer_}<br>"
+                         f"Prezzo totale: {roomGross_}<br>"
+                         f"Ospiti: {totalGuest_}<br>"
+                         f"Checkin: {checkin_}<br>"
+                         f"Checkout: {checkout_}<br>"
+                         f"Numero stanza: {numero_stanza_}<br>"
+                         f"Numero notti: {n_notti}<br>"
+                         f"Quantity soggiorno: {quantity_soggiorno}<br>"
+                         f"Prezzo unitario: {prezzo_unitario_}<br>"
+                         f"City utente: {city_}<br>"
+                         f"Email: {email_}<br>"
+                         f"Guests List: {guestsList_}<br>"
+                         f"Telefono: {phone_}<br>"
+                         f"Indirizzo: {address_}<br>"
+                         f"Nome stanza: {nome_stanza}<br></p>",
+                    message_type='comment'
+                )
 
                 # ************************************************************************
 
@@ -275,6 +287,7 @@ class RoomBookingController(http.Controller):
                     # Assegna la fattura esistente all'oggetto room_booking_obj
 
                     room_booking_obj = existing_invoice
+
 
             print("La fattura ha il seguyente id ---------->", room_booking_obj.id)
 
