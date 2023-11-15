@@ -46,6 +46,7 @@ class RoomBookingController(http.Controller):
 
    #gestione degli id dinamici
 
+
     #MAIN
     def handle_custom_endpoint(self, **post):
         try:
@@ -67,6 +68,8 @@ class RoomBookingController(http.Controller):
             numero_stanza_ = content.get("rooms")
             priceBreakdown = content.get("priceBreakdown")
             prezzo_unitario_ = priceBreakdown[0].get("price")
+            data_creazione_ = content.get("createTime")
+            note_interne_ = content.get("channelNotes")
             # **info cliente**
             guests = content.get("guests")
             checkin_ = guests[0].get("checkin")
@@ -78,8 +81,21 @@ class RoomBookingController(http.Controller):
 
             tipo = data_dict.get('type')
 
+            #gestione della tipologia della camera
+            psm = content.get("pmsProduct")
+            id_to_room_name = {
+                "599451": "Sky 001 Real Room",
+                "599455": "Los Angeles Apartment 101",
+                "612859": "quadrupla sepa"
+                # Aggiungi altre associazioni ID-nome qui secondo necessità
+            }
+            room_name = id_to_room_name.get(str(psm))
+            #piattaforma di prenotazione
+            piattaforma = content.get("channelName")
+
             checkin_date = fields.Date.from_string(checkin_)
             checkout_date = fields.Date.from_string(checkout_)
+            data_creazione_mod = fields.Date.from_string(data_creazione_)
             delta = checkout_date - checkin_date
             n_notti = delta.days
             quantity_soggiorno = totalGuest_ * n_notti
@@ -101,9 +117,18 @@ class RoomBookingController(http.Controller):
                 "telefono": phone_,
                 "indirizzo": address_,
                 "tipo": tipo,
-                "nome stanza" : nome_stanza
-
+                "nome stanza" : nome_stanza,
+                "creazione fattura" : data_creazione_,
+                "nota Interna": note_interne_,
+                "Tipologia prodotto id": psm,
+                "Tipologia camera": room_name,
+                "Piattaforma di prenotazione": piattaforma
             }
+            #creazione piattaforma
+
+            team_vendite = request.env['crm.team'].sudo().search([('name','=',piattaforma)], limit=1)
+            if not team_vendite:
+                team_vendite = request.env['crm.team'].sudo().create({'name': piattaforma})
 
             # Creazione della fattura
             room_booking_obj = []  # Inizializza la variabile come False
@@ -142,7 +167,10 @@ class RoomBookingController(http.Controller):
                     'totalGuest': totalGuest_,
                     'rooms': n_notti,
                     'roomGross': roomGross_,
-                    'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
+                    'partner_id': intero_contact,  # Utilizza l'ID del contatto come partner_id
+                    'invoice_date': data_creazione_mod,
+                    'ref': room_name,
+                    'team_id': team_vendite.id
                 })
 
                 # Creazione delle linee della fattura
@@ -153,8 +181,8 @@ class RoomBookingController(http.Controller):
                     'move_id': room_booking_obj.id,
                     'product_id': room_product.id,  # ID del prodotto 'Pernotto' nel portale amministrazione
                     'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
-                    'quantity': n_notti,
-                    'price_unit': prezzo_unitario_,
+                    'quantity': 1,
+                    'price_unit': roomGross_,
                     'account_id': customer_account.id
                 }
                 linee_fattura.append(linea_fattura_pernotto)
@@ -188,7 +216,10 @@ class RoomBookingController(http.Controller):
                          f"Guests List: {guestsList_}<br>"
                          f"Telefono: {phone_}<br>"
                          f"Indirizzo: {address_}<br>"
-                         f"Nome stanza: {nome_stanza}<br></p>",
+                         f"<span style='color:red; font-weight:bold;'>Note interne: {note_interne_}</span><br>"
+                         f"Nome stanza: {nome_stanza}<br>"
+                         f"Nome camera: {room_name}<br>"
+                         f"Piattaforma di prenotazione: {piattaforma}</p>",
                     message_type='comment'
                 )
 
@@ -216,7 +247,9 @@ class RoomBookingController(http.Controller):
                         'checkout': checkout_,
                         'totalGuest': totalGuest_,
                         'roomGross': roomGross_,
+                        'invoice_date': data_creazione_mod,  #DOMANDA:  DEVO AGGIUNGERE LA DATA DI MODIFICA?
                         # 'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
+                        'ref': room_name
                     })
 
                     existing_invoice_line_ids = existing_invoice.invoice_line_ids
@@ -227,8 +260,8 @@ class RoomBookingController(http.Controller):
                             # Aggiorna le informazioni relative al prodotto 'Pernotto'
                             line.write({
                                 'name': f"Prenotazione {refer_} dal {checkin_} al {checkout_}",
-                                'quantity': n_notti,
-                                'price_unit': prezzo_unitario_
+                                'quantity': 1,
+                                'price_unit': roomGross_
                                 # Aggiungi altri campi da aggiornare
                             })
                         elif line.product_id.id == tassa_soggiorno.id:  # ID del prodotto 'Tassa di Soggiorno'
@@ -256,7 +289,10 @@ class RoomBookingController(http.Controller):
                          f"Guests List: {guestsList_}<br>"
                          f"Telefono: {phone_}<br>"
                          f"Indirizzo: {address_}<br>"
-                         f"Nome stanza: {nome_stanza}<br></p>",
+                         f"<span style='color:red; font-weight:bold;'>Note interne: {note_interne_}</span><br>"
+                         f"Nome stanza: {nome_stanza}<br>"
+                         f"Nome camera: {room_name}"
+                         f"Piattaforma di prenotazione: {piattaforma}</p>",
                     message_type='comment'
                 )
 
