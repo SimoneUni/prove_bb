@@ -1,46 +1,20 @@
 #copyright © Simone Tullino 08/11
 from odoo import http, fields
 from odoo.http import request, Response, _logger
-from odoo.tools.safe_eval import json
-#*****************************************prova*****************
+from odoo.tools.safe_eval import json, datetime
+import json
 
-#link https://odoo16-prenotazione-bb.unitivastaging.it/api/test
+try:
+    from json.decoder import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
+#*****************************************prova*****************
+#https://odoo16-prenotazione-bb.unitivastaging.it/api/prova
 
 #*********************route****************************
 
-# class AccountController(http.Controller):
-#     @http.route('/api/get_accounts', auth='public', csrf=False)
-#     def get_accounts(self):
-#         account_model = http.request.env['account.account']
-#         accounts = account_model.sudo().search([])
-#
-#         account_list = []
-#         for account in accounts:
-#             account_info = {
-#                 'id': account.id,
-#                 'name': account.name,
-#                 'code': account.code,
-#             }
-#             account_list.append(account_info)
-#
-#         return account_list
-# class MyController(http.Controller):
-#
-#     @http.route('/print_invoices', type='http', auth='public', csrf=False)
-#     def print_invoices(self):
-#         invoice_records = request.env['account.move'].sudo().search([])
-#         for invoice in invoice_records:
-#             print("ID FATTURA : ", invoice.id)
-#             print("Referenza:", invoice.refer)
-#             print("Stato:", invoice.state)
-#         return "postate"
-# class Fatture(http.Controller):
-#     @http.route('/api/getfatture' , auth='public', csrf="*")
-#     def get_fatture(self):
-#         tutte_lefatture = http.request.env['accoun.move']
-#         fatture = tutte_lefatture.sudo().search([])
 
-#https://odoo16-prenotazione-bb.unitivastaging.it/api/prova
+
 class RoomBookingController(http.Controller):
     @http.route('/api/prova', cors='*', auth='public', methods=['POST'], csrf=False, website=False)
 
@@ -69,7 +43,7 @@ class RoomBookingController(http.Controller):
             priceBreakdown = content.get("priceBreakdown")
             prezzo_unitario_ = priceBreakdown[0].get("price")
             data_creazione_ = content.get("createTime")
-            note_interne_ = content.get("channelNotes")
+            note_interne_= content.get("channelNotes")
             # **info cliente**
             guests = content.get("guests")
             checkin_ = guests[0].get("checkin")
@@ -78,6 +52,10 @@ class RoomBookingController(http.Controller):
             email_ = guests[0].get("email")
             phone_ = guests[0].get("phone")
             address_ = guests[0].get("address")
+            effettivo_Checkin = content.get("effectiveCheckin")
+            effettivo_Checkout = content.get("effectiveCheckout")
+            tipo_pagamento = content.get("paymentType")
+            stato_pagamento = content.get("paymentStatus")
 
             tipo = data_dict.get('type')
 
@@ -99,7 +77,7 @@ class RoomBookingController(http.Controller):
             delta = checkout_date - checkin_date
             n_notti = delta.days
             quantity_soggiorno = totalGuest_ * n_notti
-            nome_stanza = content.get("roomNameGuest")
+            nome_stanza = content.get("roomName")
 
             response_data = {
                 "refer": refer_,
@@ -122,7 +100,12 @@ class RoomBookingController(http.Controller):
                 "nota Interna": note_interne_,
                 "Tipologia prodotto id": psm,
                 "Tipologia camera": room_name,
-                "Piattaforma di prenotazione": piattaforma
+                "Piattaforma di prenotazione": piattaforma,
+                "Checkin effettuato": effettivo_Checkin,
+                "Checkout effettuato": effettivo_Checkout,
+                "Tipo pagamento": tipo_pagamento,
+                "Stato pagamento": stato_pagamento
+
             }
             #creazione piattaforma
 
@@ -170,7 +153,16 @@ class RoomBookingController(http.Controller):
                     'partner_id': intero_contact,  # Utilizza l'ID del contatto come partner_id
                     'invoice_date': data_creazione_mod,
                     'ref': room_name,
-                    'team_id': team_vendite.id
+                    'team_id': team_vendite.id,
+                    'email_utente': email_,
+                    'telefono_utente': phone_,
+                    'nome_stanza_utente': nome_stanza,
+                    'tipologia_camera': room_name,
+                    'nota_interna': note_interne_,
+                    'checkin_effettuato': effettivo_Checkin,
+                    'checkout_effettuato': effettivo_Checkout,
+                    'stato_del_pagamento': stato_pagamento,
+                    'tipo_di_pagamento': tipo_pagamento
                 })
 
                 # Creazione delle linee della fattura
@@ -219,7 +211,11 @@ class RoomBookingController(http.Controller):
                          f"<span style='color:red; font-weight:bold;'>Note interne: {note_interne_}</span><br>"
                          f"Nome stanza: {nome_stanza}<br>"
                          f"Nome camera: {room_name}<br>"
-                         f"Piattaforma di prenotazione: {piattaforma}</p>",
+                         f"Piattaforma di prenotazione: {piattaforma}<br>"
+                         f"Check_in effettuato: {effettivo_Checkin} <br>"
+                         f"Check_out effettuato: {effettivo_Checkout} <br>"
+                         f"Stato del pagamento: {stato_pagamento} <br>"
+                         f"Tipo di pagamento: {tipo_pagamento} </pr>",
                     message_type='comment'
                 )
 
@@ -235,8 +231,6 @@ class RoomBookingController(http.Controller):
 
                 ], limit=1)
 
-
-
                 if existing_invoice:
                     existing_invoice.write({
                         'state': 'draft',
@@ -247,9 +241,19 @@ class RoomBookingController(http.Controller):
                         'checkout': checkout_,
                         'totalGuest': totalGuest_,
                         'roomGross': roomGross_,
-                        'invoice_date': data_creazione_mod,  #DOMANDA:  DEVO AGGIUNGERE LA DATA DI MODIFICA?
+                        'invoice_date': data_creazione_mod,  # DOMANDA:  DEVO AGGIUNGERE LA DATA DI MODIFICA?
                         # 'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
-                        'ref': room_name
+                        'ref': room_name,
+                        'team_id': team_vendite.id,
+                        'email_utente': email_,
+                        'telefono_utente': phone_,
+                        'nome_stanza_utente': nome_stanza,
+                        'tipologia_camera': room_name,
+                        'nota_interna': note_interne_,
+                        'checkin_effettuato': effettivo_Checkin,
+                        'checkout_effettuato': effettivo_Checkout,
+                        'stato_del_pagamento': stato_pagamento,
+                        'tipo_di_pagamento': tipo_pagamento
                     })
 
                     existing_invoice_line_ids = existing_invoice.invoice_line_ids
@@ -273,30 +277,13 @@ class RoomBookingController(http.Controller):
                             })
 
                 room_booking_obj = existing_invoice
-                room_booking_obj.message_post(
-                    body=f"<p><b><font size='4' face='Arial'>Dati aggiornati:</font></b><br>"
-                         f"Refer: {refer_}<br>"
-                         f"Prezzo totale: {roomGross_}<br>"
-                         f"Ospiti: {totalGuest_}<br>"
-                         f"Checkin: {checkin_}<br>"
-                         f"Checkout: {checkout_}<br>"
-                         f"Numero stanza: {numero_stanza_}<br>"
-                         f"Numero notti: {n_notti}<br>"
-                         f"Quantity soggiorno: {quantity_soggiorno}<br>"
-                         f"Prezzo unitario: {prezzo_unitario_}<br>"
-                         f"City utente: {city_}<br>"
-                         f"Email: {email_}<br>"
-                         f"Guests List: {guestsList_}<br>"
-                         f"Telefono: {phone_}<br>"
-                         f"Indirizzo: {address_}<br>"
-                         f"<span style='color:red; font-weight:bold;'>Note interne: {note_interne_}</span><br>"
-                         f"Nome stanza: {nome_stanza}<br>"
-                         f"Nome camera: {room_name}"
-                         f"Piattaforma di prenotazione: {piattaforma}</p>",
-                    message_type='comment'
-                )
 
-                # ************************************************************************
+
+
+
+
+
+            # ************************************************************************
 
 
             elif tipo == 'RESERVATION_CANCELLED':
@@ -343,81 +330,3 @@ class RoomBookingController(http.Controller):
 
 
 
-
-
-     # ***** TASSA SOGIORNO ******
-# delta = checkout - check in
-# n_notti = delta.days
-#quantity = numero_ospiti*delta
-
-    # ***** PERNOTTO *******
-
-
-
-#name = f"Prenotazione {invoice.refer} dal {checkin} al {checkout}"
-#quantity = numero stanze
-
-        # room_booking_obj = request.env['account.move']
-        # new_invoice = room_booking_obj.sudo().create({
-        #     'refer': refer,
-        #     'checkin': checkin,
-        #     'checkout': checkout,
-        #     'totalGuest': totalGuest,
-        #     'roomGross': roomGross,
-        #     'partner_id': 36
-        #     # Altri campi del tuo modello che devono essere impostati
-        # })
-
-#********************************************************************************************************
-# else:
-#     print("fallito")
-# from odoo import http
-# from odoo.http import request
-# import json
-#
-# class ThirdPartyConnector(http.Controller):
-#     @http.route('/third_party_connector/receive_data', type='json', auth='user', methods=['POST'], csrf=False)
-#     def receive_data(self, **kwargs):
-#         data = request.jsonrequest
-#
-#         if data:
-#             try:
-#                 model = "account.move"
-#                 type = data.get('type')
-#
-#                 # Estrazione dati dal JSON
-#                 content_data = json.loads(data.get('content')) if data.get('content') else {}
-#
-#                 # Fiedls di interesse
-#                 fields = {
-#                     'refer': content_data.get('refer'),
-#                     'checkin': content_data.get('checkin').split('T')[0] if content_data.get('checkin') else False,
-#                     'checkout': content_data.get('checkout').split('T')[0] if content_data.get('checkout') else False,
-#                     'totalGuest': content_data.get('totalGuest'),
-#                     'totalChildren': content_data.get('children'),
-#                     'totalInfants': content_data.get('infants'),
-#                     'rooms': content_data.get('rooms'),
-#                     'roomGross': content_data.get('roomGross'),
-#                     # altri fields possono essere aggiunti qui in base alle necessità
-#                 }
-#
-#                 if type == 'RESERVATION_CREATED':
-#
-#                     fields['state'] = 'draft'
-#                     record = request.env[model].create(fields)
-#                     return {'success': True, 'record_id': record.id}
-#
-#                 elif type in ['RESERVATION_CANCELLED', 'RESERVATION_CONFIRMED']:
-#                     # cerca il record esistente tramite ID di riferimento, aggiorna lo stato e lascia invariati gli altri campi
-#                     refer_id = fields.get('refer')
-#                     record = request.env[model].search([('refer', '=', refer_id)])
-#
-#
-#
-#                 else:
-#                     return {'error': 'Invalid type'}
-#
-#             except Exception as e:
-#                 return {'error': str(e)}
-#
-#         return {'error': 'Invalid data'}

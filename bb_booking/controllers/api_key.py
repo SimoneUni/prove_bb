@@ -16,12 +16,12 @@ payload = {
     'exp': datetime.utcnow() + timedelta(days=1)  # Token scade dopo 1 giorno
 }
 
-# # Genera il token JWT
+# Genera il token JWT
 # token = jwt.encode(payload, secret_key, algorithm='HS256')
 # print(token)
 
 
-# Dati del client per ottenere il token
+#Dati del client per ottenere il token
 CLIENT_ID = "public_a3a3b3c2278b4deabd9108e74c5e8af2"
 CLIENT_SECRET = "secret_47ff49e5533047a994869a012a94eecfTOIUDRGXYK"
 
@@ -133,89 +133,89 @@ def fetch_accommodations(token):
         print(f"Errore nell'ottenere gli accommodation: {response.headers}, {headers}")
         return []
 
-
-# Esempio di utilizzo:
-# Ottieni il token di accesso (già ottenuto precedentemente)
-access_token = get_access_token()
-# Ottenere gli accommodation
-accommodations = fetch_accommodations(access_token)
-if accommodations:
-    print(f"Gli accommodation ottenuti con successo: {accommodations}")
-else:
-    print("Nessun accommodation disponibile o errore nell'ottenimento.")
-
-
-def fetch_reservations_for_accommodation_id(access_token_a, accommodation_id):
-    reservation_endpoint = f"https://api.octorate.com/connect/rest/v1/reservation/{accommodation_id}"
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {access_token_a}"
-    }
-    response = requests.get(reservation_endpoint, headers=headers)
-
-    if response.status_code == 200:
-        reservations = response.json()
-        return reservations
-    else:
-        print(
-            f"Errore nell'ottenere le prime prenotazioni per l'alloggio {accommodation_id}, {headers}, {response.status_code}, {response.text}")
-        return []
-
-
-# Esempio di utilizzo:
-# Ottieni il token di accesso (già ottenuto precedentemente)
-
-# access_token_a = get_access_token2()
-# print(access_token_a)
-# Inserisci l'ID dell'alloggio per cui desideri ottenere le prenotazioni
-accommodation_id = "632966"
-
-# Ottieni le prenotazioni per l'alloggio selezionato utilizzando il token ottenuto
-reservations = fetch_reservations_for_accommodation_id(access_token_a, accommodation_id)
-
-# Controlla se ci sono prenotazioni
-if reservations:
-    print(f"{accommodation_id}: {reservations}")
-
-    # Converti le prenotazioni in formato JSON
-    reservations_json = json.dumps(reservations)
-
-    # Definisci l'URL del webhook al quale inviare le prenotazioni
-    webhook_url = "https://webhook.site/e2e61afa-8888-487d-a8d6-4c79156487dd"
-
-    # Invia i dati al webhook
-    headers = {
-        "Content-Type": "application/json"
-    }
-
-    response = requests.post(webhook_url, data=reservations_json, headers=headers)
-
-    # Verifica la risposta del webhook
-    if response.status_code == 200:
-        print("Dati inviati con successo al webhook.")
-    else:
-        print(f"Errore nell'invio dei dati al webhook: {response.status_code} - {response.text}")
-else:
-    print("Nessuna prenotazione disponibile o errore nell'ottenimento.")
-
-print(f"{accommodation_id}:{reservations}")
-
-
-
-def fetch_webhooks(access_token_a):
-    endpoint = "https://api.octorate.com/connect/rest/v1/subscription"
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {access_token_a}"
-    }
-
-    response = requests.get(endpoint, headers=headers)
-    if response.status_code != 200:
-        print(f"Errore nell'ottenere i webhooks configurati: {response.status_code} - {response.text} - {headers}")
-        return []
-
-    return response.json()
+#
+# # Esempio di utilizzo:
+# # Ottieni il token di accesso (già ottenuto precedentemente)
+# access_token = get_access_token()
+# # Ottenere gli accommodation
+# accommodations = fetch_accommodations(access_token)
+# if accommodations:
+#     print(f"Gli accommodation ottenuti con successo: {accommodations}")
+# else:
+#     print("Nessun accommodation disponibile o errore nell'ottenimento.")
+#
+#
+# def fetch_reservations_for_accommodation_id(access_token_a, accommodation_id):
+#     reservation_endpoint = f"https://api.octorate.com/connect/rest/v1/reservation/{accommodation_id}"
+#     headers = {
+#         "accept": "application/json",
+#         "Authorization": f"Bearer {access_token_a}"
+#     }
+#     response = requests.get(reservation_endpoint, headers=headers)
+#
+#     if response.status_code == 200:
+#         reservations = response.json()
+#         return reservations
+#     else:
+#         print(
+#             f"Errore nell'ottenere le prime prenotazioni per l'alloggio {accommodation_id}, {headers}, {response.status_code}, {response.text}")
+#         return []
+#
+#
+# # Esempio di utilizzo:
+# # Ottieni il token di accesso (già ottenuto precedentemente)
+#
+# # access_token_a = get_access_token2()
+# # print(access_token_a)
+# # Inserisci l'ID dell'alloggio per cui desideri ottenere le prenotazioni
+# accommodation_id = "632966"
+#
+# # Ottieni le prenotazioni per l'alloggio selezionato utilizzando il token ottenuto
+# reservations = fetch_reservations_for_accommodation_id(access_token_a, accommodation_id)
+#
+# # Controlla se ci sono prenotazioni
+# if reservations:
+#     print(f"{accommodation_id}: {reservations}")
+#
+#     # Converti le prenotazioni in formato JSON
+#     reservations_json = json.dumps(reservations)
+#
+#     # Definisci l'URL del webhook al quale inviare le prenotazioni
+#     webhook_url = "https://webhook.site/e2e61afa-8888-487d-a8d6-4c79156487dd"
+#
+#     # Invia i dati al webhook
+#     headers = {
+#         "Content-Type": "application/json"
+#     }
+#
+#     response = requests.post(webhook_url, data=reservations_json, headers=headers)
+#
+#     # Verifica la risposta del webhook
+#     if response.status_code == 200:
+#         print("Dati inviati con successo al webhook.")
+#     else:
+#         print(f"Errore nell'invio dei dati al webhook: {response.status_code} - {response.text}")
+# else:
+#     print("Nessuna prenotazione disponibile o errore nell'ottenimento.")
+#
+# print(f"{accommodation_id}:{reservations}")
+#
+#
+#
+# def fetch_webhooks(access_token_a):
+#     endpoint = "https://api.octorate.com/connect/rest/v1/subscription"
+#
+#     headers = {
+#         "Accept": "application/json",
+#         "Authorization": f"Bearer {access_token_a}"
+#     }
+#
+#     response = requests.get(endpoint, headers=headers)
+#     if response.status_code != 200:
+#         print(f"Errore nell'ottenere i webhooks configurati: {response.status_code} - {response.text} - {headers}")
+#         return []
+#
+#     return response.json()
 
 
 
