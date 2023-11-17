@@ -1,4 +1,6 @@
 #copyright © Simone Tullino 08/11
+import requests
+
 from odoo import http, fields
 from odoo.http import request, Response, _logger
 from odoo.tools.safe_eval import json, datetime
@@ -13,6 +15,20 @@ except ImportError:
 
 #*********************route****************************
 
+def fetch_room_cleaning_details(pms_product_id):
+    url = "https://api.octorate.com/connect/rest/v1/pms"
+    # Usa il token statico qui
+    headers = {
+        'accept': 'application/json',
+        'Authorization': 'Bearer 5fc9e202a3ce46c592bb793b3a70a6adHRGYUDTYFO'
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json().get("data", [])
+        for room in data:
+            if room["id"] == pms_product_id:
+                return room.get("clean"), room.get("lastCleaningDate"), room.get("name")
+    return None, None, None
 
 
 class RoomBookingController(http.Controller):
@@ -60,14 +76,14 @@ class RoomBookingController(http.Controller):
             tipo = data_dict.get('type')
 
             #gestione della tipologia della camera
-            psm = content.get("pmsProduct")
-            id_to_room_name = {
-                "599451": "Sky 001 Real Room",
-                "599455": "Los Angeles Apartment 101",
-                "612859": "quadrupla sepa"
-                # Aggiungi altre associazioni ID-nome qui secondo necessità
-            }
-            room_name = id_to_room_name.get(str(psm))
+            # psm = content.get("pmsProduct")
+            # id_to_room_name = {
+            #     "599451": "Sky 001 Real Room",
+            #     "599455": "Los Angeles Apartment 101",
+            #     "612859": "quadrupla sepa"
+            #     # Aggiungi altre associazioni ID-nome qui secondo necessità
+            # }
+            # room_name = id_to_room_name.get(str(psm))
             #piattaforma di prenotazione
             piattaforma = content.get("channelName")
 
@@ -78,6 +94,12 @@ class RoomBookingController(http.Controller):
             n_notti = delta.days
             quantity_soggiorno = totalGuest_ * n_notti
             nome_stanza = content.get("roomName")
+
+            # gestione della tipologia della camera
+            pms_product_id = content.get("pmsProduct")
+            clean, last_cleaning_date, name = fetch_room_cleaning_details(pms_product_id)
+
+
 
             response_data = {
                 "refer": refer_,
@@ -98,14 +120,16 @@ class RoomBookingController(http.Controller):
                 "nome stanza" : nome_stanza,
                 "creazione fattura" : data_creazione_,
                 "nota Interna": note_interne_,
-                "Tipologia prodotto id": psm,
-                "Tipologia camera": room_name,
+                #"Tipologia prodotto id": psm,
+                #"Tipologia camera": room_name,
                 "Piattaforma di prenotazione": piattaforma,
                 "Checkin effettuato": effettivo_Checkin,
                 "Checkout effettuato": effettivo_Checkout,
                 "Tipo pagamento": tipo_pagamento,
-                "Stato pagamento": stato_pagamento
-
+                "Stato pagamento": stato_pagamento,
+                "Stato camera": 'Clean' if clean else 'Not Clean',
+                "Ultima pulizia": last_cleaning_date,
+                "Tipologia camera": name
             }
             #creazione piattaforma
 
@@ -152,17 +176,20 @@ class RoomBookingController(http.Controller):
                     'roomGross': roomGross_,
                     'partner_id': intero_contact,  # Utilizza l'ID del contatto come partner_id
                     'invoice_date': data_creazione_mod,
-                    'ref': room_name,
+                    #'ref': room_name,
                     'team_id': team_vendite.id,
                     'email_utente': email_,
                     'telefono_utente': phone_,
                     'nome_stanza_utente': nome_stanza,
-                    'tipologia_camera': room_name,
                     'nota_interna': note_interne_,
                     'checkin_effettuato': effettivo_Checkin,
                     'checkout_effettuato': effettivo_Checkout,
                     'stato_del_pagamento': stato_pagamento,
-                    'tipo_di_pagamento': tipo_pagamento
+                    'tipo_di_pagamento': tipo_pagamento,
+                    'pulizia_camera': clean,
+                    'ultima_pulizia': last_cleaning_date,
+                    'tipologia_camera': name,
+
                 })
 
                 # Creazione delle linee della fattura
@@ -210,10 +237,12 @@ class RoomBookingController(http.Controller):
                          f"Indirizzo: {address_}<br>"
                          f"<span style='color:red; font-weight:bold;'>Note interne: {note_interne_}</span><br>"
                          f"Nome stanza: {nome_stanza}<br>"
-                         f"Nome camera: {room_name}<br>"
+                         f"Nome camera: {name}<br>"
+                         f"Pulizia camera:{clean}<br>"
+                         f"Ultima pulizia:{last_cleaning_date}<br>"
                          f"Piattaforma di prenotazione: {piattaforma}<br>"
-                         f"Check_in effettuato: {effettivo_Checkin} <br>"
-                         f"Check_out effettuato: {effettivo_Checkout} <br>"
+                         f"Check in effettuato: {effettivo_Checkin} <br>"
+                         f"Check out effettuato: {effettivo_Checkout} <br>"
                          f"Stato del pagamento: {stato_pagamento} <br>"
                          f"Tipo di pagamento: {tipo_pagamento} </pr>",
                     message_type='comment'
@@ -243,12 +272,14 @@ class RoomBookingController(http.Controller):
                         'roomGross': roomGross_,
                         'invoice_date': data_creazione_mod,  # DOMANDA:  DEVO AGGIUNGERE LA DATA DI MODIFICA?
                         # 'partner_id': intero_contact  # Utilizza l'ID del contatto come partner_id
-                        'ref': room_name,
+                        #'ref': room_name,
                         'team_id': team_vendite.id,
                         'email_utente': email_,
                         'telefono_utente': phone_,
                         'nome_stanza_utente': nome_stanza,
-                        'tipologia_camera': room_name,
+                        'tipologia_camera': name,
+                        'pulizia_camera': clean,
+                        'ultima_pulizia': last_cleaning_date,
                         'nota_interna': note_interne_,
                         'checkin_effettuato': effettivo_Checkin,
                         'checkout_effettuato': effettivo_Checkout,

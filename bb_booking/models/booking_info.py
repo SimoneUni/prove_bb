@@ -23,12 +23,15 @@ class roombooking(models.Model):
     email_utente = fields.Char(string='Email', tracking=True)
     telefono_utente = fields.Char(string='Telefono', tracking=True)
     nome_stanza_utente = fields.Char(string='Nome Stanza', tracking=True)
-    tipologia_camera = fields.Char(string='Tipologia Camera', tracking=True)
     nota_interna = fields.Text(string='Note interne', tracking=True)
     checkin_effettuato = fields.Char(string="Check_in effettuato", tracking=True)
     checkout_effettuato = fields.Char(string="Check_out effettuato", tracking=True)
     stato_del_pagamento = fields.Char(string="Stato del pagamento", tracking=True)
     tipo_di_pagamento = fields.Char(string="Tipo del pagamento", tracking=True)
+    pulizia_camera = fields.Char(string="Pulizia camera", tracking=True)
+    ultima_pulizia = fields.Char(string="Ultima pulizia", tracking=True)
+    tipologia_camera = fields.Char(string='Tipologia Camera', tracking=True)
+
 
 
 
