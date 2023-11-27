@@ -10,6 +10,7 @@ class roombooking(models.Model):
     totalGuest = fields.Integer(string='Ospiti Totali', tracking=True)
     totalChildren = fields.Integer(string='Totali Ragazzi', tracking=True)
     totalInfants = fields.Integer(string='Totali Neonati', tracking=True)
+    totale_adulti = fields.Integer(string='totale adulti', tracking=True)
     soggiorno_input = fields.Html(string='Soggiorno', compute='_compute_soggiorno_input', sanitize=False, store=False)
     rooms = fields.Float(string='Numero stanza', tracking=True)
     roomGross = fields.Float(string='Costo stanza', tracking=True)
@@ -31,6 +32,8 @@ class roombooking(models.Model):
     pulizia_camera = fields.Char(string="Pulizia camera", tracking=True)
     ultima_pulizia = fields.Char(string="Ultima pulizia", tracking=True)
     tipologia_camera = fields.Char(string='Tipologia Camera', tracking=True)
+
+
 
 
 

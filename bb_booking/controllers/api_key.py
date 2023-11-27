@@ -25,113 +25,113 @@ payload = {
 CLIENT_ID = "public_a3a3b3c2278b4deabd9108e74c5e8af2"
 CLIENT_SECRET = "secret_47ff49e5533047a994869a012a94eecfTOIUDRGXYK"
 
-
-# Funzione per ottenere il token di accesso
-def get_access_token():
-    endpoint = "https://api.octorate.com/connect/rest/v1/identity/apilogin"
-
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-
-    payload = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET
-    }
-
-    response = requests.post(endpoint, data=payload, headers=headers)
-    if response.status_code == 200:
-        return response.json().get("access_token")
-    else:
-        print(f"Errore nell'ottenere il token di accesso: {response.status_code} - {response.text}")
-        return None
-
-
-# Ottieni il token di accesso
-access_token = get_access_token()
-if access_token:
-    print(f"Token di accesso ottenuto con successo: {access_token}")
-else:
-    print("Errore nell'ottenere il token di accesso.")
-
-
-def get_access_token2():
-    endpoint = "https://api.octorate.com/connect/rest/v1/identity/token"
-
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-
-    payload = {
-        "grant_type": "authorization_code",
-        "code": "3c7611558345463bb4f29455cccb99f54f9a179690584decb36987c167e29886",
-        "client_id": CLIENT_ID,  # Assicurati di aver definito CLIENT_ID
-        "client_secret": CLIENT_SECRET,  # Assicurati di aver definito CLIENT_SECRET
-        "redirect_uri": "https://api.octorate.com/connect/docs/oauth2-redirect.html"
-    }
-
-    response = requests.post(endpoint, data=payload, headers=headers)
-
-    if response.status_code == 200:
-        return response.json().get("access_token")
-    else:
-        print(f"Errore nell'ottenere il token di accesso: {response.status_code} - {response.text}")
-        return None
-
-
-# Ottieni il token di accesso
-access_token_a = get_access_token2()
-
-if access_token_a:
-    print(f"Token per visionare le reservation è : {access_token_a}")
-else:
-    print("Errore nell'ottenere il token di accesso.")
-
-
-def refresh_token():
-   endpoint = "https://api.octorate.com/connect/rest/v1/identity/refresh"
-
-   headers = {
-       "Accept": "application/json",
-       "Content-Type": "application/x-www-form-urlencoded"
-   }
-
-   payload = {
-                "grant_type": "authorization_code",
-                "code": "cc4a0b29064f4b36992e1203acdbf613eb0eda5cd36c43bab2c687820d4c8e79",
-               "client_id": CLIENT_ID,  # Assicurati di aver definito CLIENT_ID
-               "client_secret": CLIENT_SECRET,  # Assicurati di aver definito CLIENT_SECRET
-                "redirect_uri": "https://api.octorate.com/connect/docs/oauth2-redirect.html",
-                'refresh_token': '2acf003360ea4ebca6871b5d7e56efe2'
-   }
-
-   response = requests.post(endpoint, data=payload, headers=headers)
-
-   if response.status_code == 200:
-       print("refresh avvenuto con successo")
-       return response.json().get("access_token")
-   else:
-       print(f"Errore nell'ottenere il token di accesso: {response.status_code} - {response.text}")
-       return None
-
-
-def fetch_accommodations(token):
-    endpoint = "https://api.octorate.com/connect/rest/v1/accommodation"
-    # print(token)
-
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
-
-    response = requests.get(endpoint, headers=headers)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Errore nell'ottenere gli accommodation: {response.headers}, {headers}")
-        return []
+#
+# # Funzione per ottenere il token di accesso
+# def get_access_token():
+#     endpoint = "https://api.octorate.com/connect/rest/v1/identity/apilogin"
+#
+#     headers = {
+#         "Content-Type": "application/x-www-form-urlencoded"
+#     }
+#
+#     payload = {
+#         "client_id": CLIENT_ID,
+#         "client_secret": CLIENT_SECRET
+#     }
+#
+#     response = requests.post(endpoint, data=payload, headers=headers)
+#     if response.status_code == 200:
+#         return response.json().get("access_token")
+#     else:
+#         print(f"Errore nell'ottenere il token di accesso: {response.status_code} - {response.text}")
+#         return None
+#
+#
+# # Ottieni il token di accesso
+# access_token = get_access_token()
+# if access_token:
+#     print(f"Token di accesso ottenuto con successo: {access_token}")
+# else:
+#     print("Errore nell'ottenere il token di accesso.")
+#
+#
+# def get_access_token2():
+#     endpoint = "https://api.octorate.com/connect/rest/v1/identity/token"
+#
+#     headers = {
+#         "Accept": "application/json",
+#         "Content-Type": "application/x-www-form-urlencoded"
+#     }
+#
+#     payload = {
+#         "grant_type": "authorization_code",
+#         "code": "3c7611558345463bb4f29455cccb99f54f9a179690584decb36987c167e29886",
+#         "client_id": CLIENT_ID,  # Assicurati di aver definito CLIENT_ID
+#         "client_secret": CLIENT_SECRET,  # Assicurati di aver definito CLIENT_SECRET
+#         "redirect_uri": "https://api.octorate.com/connect/docs/oauth2-redirect.html"
+#     }
+#
+#     response = requests.post(endpoint, data=payload, headers=headers)
+#
+#     if response.status_code == 200:
+#         return response.json().get("access_token")
+#     else:
+#         print(f"Errore nell'ottenere il token di accesso: {response.status_code} - {response.text}")
+#         return None
+#
+#
+# # Ottieni il token di accesso
+# access_token_a = get_access_token2()
+#
+# if access_token_a:
+#     print(f"Token per visionare le reservation è : {access_token_a}")
+# else:
+#     print("Errore nell'ottenere il token di accesso.")
+#
+#
+# def refresh_token():
+#    endpoint = "https://api.octorate.com/connect/rest/v1/identity/refresh"
+#
+#    headers = {
+#        "Accept": "application/json",
+#        "Content-Type": "application/x-www-form-urlencoded"
+#    }
+#
+#    payload = {
+#                 "grant_type": "authorization_code",
+#                 "code": "cc4a0b29064f4b36992e1203acdbf613eb0eda5cd36c43bab2c687820d4c8e79",
+#                 "client_id": CLIENT_ID,  # Assicurati di aver definito CLIENT_ID
+#                 "client_secret": CLIENT_SECRET,  # Assicurati di aver definito CLIENT_SECRET
+#                 "redirect_uri": "https://api.octorate.com/connect/docs/oauth2-redirect.html",
+#                 'refresh_token': '2acf003360ea4ebca6871b5d7e56efe2'
+#    }
+#
+#    response = requests.post(endpoint, data=payload, headers=headers)
+#
+#    if response.status_code == 200:
+#        print("refresh avvenuto con successo")
+#        return response.json().get("access_token")
+#    else:
+#        print(f"Errore nell'ottenere il token di accesso: {response.status_code} - {response.text}")
+#        return None
+#
+#
+# def fetch_accommodations(token):
+#     endpoint = "https://api.octorate.com/connect/rest/v1/accommodation"
+#     # print(token)
+#
+#     headers = {
+#         "accept": "application/json",
+#         "Authorization": f"Bearer {token}"
+#     }
+#
+#     response = requests.get(endpoint, headers=headers)
+#
+#     if response.status_code == 200:
+#         return response.json()
+#     else:
+#         print(f"Errore nell'ottenere gli accommodation: {response.headers}, {headers}")
+#         return []
 
 #
 # # Esempio di utilizzo:
